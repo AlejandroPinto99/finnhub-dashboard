@@ -4,57 +4,27 @@ import {
   CssBaseline,
 } from "@mui/material";
 import { Sidebar } from "./components/Sidebar/Sidebar";
-
-
-type Trade = {
-  p: number; // precio
-  s: string; // símbolo
-  t: number; // timestamp
-  v: number; // volumen
-};
+import { useWebSocket } from "./hooks/useWebSocket";
+import { StockChart } from "./components/Charts/StockChart";
 
 export default function App() {
-  const [trades, setTrades] = useState<Trade[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
-  // const API_KEY = "d72ug4pr01qn7f070dogd72ug4pr01qn7f070dp0"
-  // useEffect(() => {
-  //   const socket = new WebSocket(
-  //     `wss://ws.finnhub.io?token=${API_KEY}`
-  //   );
+  const { trades, subscribe, unsubscribe } = useWebSocket();
 
-  //   // Conexión abierta
-  //   socket.addEventListener("open", () => {
-  //     console.log("Conectado");
+  useEffect(() => {
+    subscribe("BINANCE:BTCUSDT");
 
-  //     // Suscribirse a un símbolo (ej: Apple)
-  //     socket.send(JSON.stringify({"type":"subscribe","symbol":"BINANCE:BTCUSDT"}));
-  //   });
+    return () => {
+      unsubscribe("BINANCE:BTCUSDT");
+    };
+  }, []);
 
-  //   // Recibir datos
-  //   socket.addEventListener("message", (event) => {
-  //     const data = JSON.parse(event.data);
-  //     console.log({ data })
-  //     if (data.type === "trade") {
-  //       setTrades((prev) => [...data.data, ...prev]);
-  //     }
-  //   });
-
-  //   // Manejo de errores
-  //   socket.addEventListener("error", (err) => {
-  //     console.error("Error:", err);
-  //   });
-
-  //   // Cleanup
-  //   return () => {
-  //     socket.close();
-  //   };
-  // }, []);
+  console.log({ trades })
 
   return (
     <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-        <CssBaseline />
-
+      <CssBaseline />
       <Sidebar
         open={sidebarOpen}
         mobileOpen={mobileOpen}
@@ -75,6 +45,20 @@ export default function App() {
         {/* Contenido scrolleable */}
         <Box sx={{ flexGrow: 1, overflow: "auto", p: 3 }}>
           <p>Alejandro estuvo aquí</p>
+          <ul>
+            {(trades["BINANCE:BTCUSDT"] || [])
+              .slice(0, 10)
+              .map((trade, index) => (
+                <li key={index}>
+                  {trade.s} - ${trade.p} ({trade.v})
+                </li>
+              ))}
+          </ul>
+          {
+            trades["BINANCE:BTCUSDT"]?.length > 0 && (
+              <StockChart symbol={"BINANCE:BTCUSDT"} trades={trades["BINANCE:BTCUSDT"]} />
+            )
+          }
         </Box>
       </Box>
     </Box>
